@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
@@ -21,9 +23,9 @@ public class BookController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<Object> getBookById(@PathVariable Long id) {
+  public ResponseEntity<Object> getBookById(@PathVariable int id) {
     for (Book book : books) {
-      if (book.getId().equals(id)) {
+      if (Objects.equals(book.getId(), id)) {
         return ResponseEntity.ok(book);
       }
     }
@@ -37,9 +39,9 @@ public class BookController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<Object> updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
+  public ResponseEntity<Object> updateBook(@PathVariable int id, @RequestBody Book updatedBook) {
     for (Book book : books) {
-      if (book.getId().equals(id)) {
+      if (Objects.equals(book.getId(), id)) {
         book.setId(updatedBook.getId());
         book.setPrice(updatedBook.getPrice());
         book.setAuthor(updatedBook.getAuthor());
@@ -50,9 +52,9 @@ public class BookController {
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Object> deleteBook(@PathVariable Long id) {
+  public ResponseEntity<Object> deleteBook(@PathVariable int id) {
     for (Book book : books) {
-      if (book.getId().equals(id)) {
+      if (Objects.equals(book.getId(), id)) {
         books.remove(book);
         return ResponseEntity.ok("Book with ID " + id + " is deleted.");
       }
