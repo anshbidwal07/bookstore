@@ -1,0 +1,126 @@
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    private final String url = "jdbc:mysql://localhost:3306/db_example";
+    private final String user = "root";
+    private final String password = "your_password";
+
+    @GetMapping
+    public List<Book> getAllBooks() {
+        List<Book> books = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM books");
+            while (rs.next()) {
+                Book book = new Book();
+                book.setId(rs.getLong("id"));
+                book.setTitle(rs.getString("title"));
+                book.setGenre(rs.getString("genre"));
+                book.setAuthor(rs.getString("author"));
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
+    Certainly, here's the rest of the CRUD operations implemented in the `BookController` using JDBC:
+
+```java
+//... (previous code remains unchanged)
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getBookById(@PathVariable Long id) {
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE id = ?");
+            stmt.setLong(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                Book book = new Book();
+                book.setId(rs.getLong("id"));
+                book.setTitle(rs.getString("title"));
+                book.setGenre(rs.getString("genre"));
+                book.setAuthor(rs.getString("author"));
+                return ResponseEntity.ok(book);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book with ID " + id + " not found.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching book with ID " + id);
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<Object> createBook(@RequestBody Book book) {
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO books (title, genre, author) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            stmt.setString(1, book.getTitle());
+            stmt.setString(2, book.getGenre());
+            stmt.setString(3, book.getAuthor());
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating book failed, no rows affected.");
+            }
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    long id = generatedKeys.getLong(1);
+                    book.setId(id);
+                    return ResponseEntity.ok(book);
+                } else {
+                    throw new SQLException("Creating book failed, no ID obtained.");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating new book.");
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Object> updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            PreparedStatement stmt = conn.prepareStatement("UPDATE books SET title = ?, genre = ?, author = ? WHERE id = ?");
+            stmt.setString(1, updatedBook.getTitle());
+            stmt.setString(2, updatedBook.getGenre());
+            stmt.setString(3, updatedBook.getAuthor());
+            stmt.setLong(4, id);
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                return ResponseEntity.ok(updatedBook);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book with ID " + id + " not found.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating book with ID " + id);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Object> deleteBook(@PathVariable Long id) {
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE id = ?");
+            stmt.setLong(1, id);
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                return ResponseEntity.ok("Book with ID " + id + " is deleted.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book with ID " + id + " not found.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting book with ID " + id);
+        }
+    }
+}
