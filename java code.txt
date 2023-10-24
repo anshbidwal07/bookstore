@@ -23,8 +23,8 @@ public class BookController {
             while (rs.next()) {
                 Book book = new Book();
                 book.setId(rs.getLong("id"));
-                book.setTitle(rs.getString("title"));
-                book.setGenre(rs.getString("genre"));
+                book.setTitle(rs.getString("name"));
+                book.setGenre(rs.getString("price"));
                 book.setAuthor(rs.getString("author"));
                 books.add(book);
             }
